@@ -18,7 +18,7 @@ end
 
 class Add < Struct.new(:left,:right)
   def to_s
-    "#{left} + #{right}"
+    "(#{left} + #{right})"
   end
 
   def reducible?
@@ -40,9 +40,33 @@ class Add < Struct.new(:left,:right)
   end
 end
 
+class Minus < Struct.new(:left,:right)
+  def to_s
+    "(#{left} - #{right})"
+  end
+
+  def reducible?
+   true
+  end
+
+  def reduce
+    if left.reducible?
+      Minus.new(left.reduce,right)
+    elsif right.reducible?
+      Minus.new(left,right.reduce)
+    else
+      Number.new(left.value - right.value)
+    end
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+end
+
 class Multiply < Struct.new(:left,:right)
   def to_s
-    "#{left} * #{right}"
+    "(#{left} * #{right})"
   end
 
   def reducible?
@@ -56,6 +80,30 @@ class Multiply < Struct.new(:left,:right)
       Multiply.new(left,right.reduce)
     else
       Number.new(left.value * right.value)
+    end
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+end
+
+class Divide < Struct.new(:left,:right)
+  def to_s
+    "(#{left} / #{right})"
+  end
+
+  def reducible?
+   true
+  end
+
+  def reduce
+    if left.reducible?
+      Divide.new(left.reduce,right)
+    elsif right.reducible?
+      Divide.new(left,right.reduce)
+    else
+      Number.new(left.value / right.value)
     end
   end
 
@@ -123,14 +171,18 @@ end
 
 #实例化一个虚拟机执行表达式
 =begin
-  1*2 + 3*4
-  2 + 3*4
-  2 + 12
+  3*2 +  (10 - 8/4)
+  6   +  (10 - 8/4)
+  6   +  (10 - 2)
+  6   +  8
   14
 =end
 AbstractMachine.new(
    Add.new(                                          
-    Multiply.new(Number.new(1), Number.new(2)),   
-    Multiply.new(Number.new(3),Number.new(4))
+    Multiply.new(Number.new(3), Number.new(2)),   
+    Minus.new(
+        Number.new(10),
+        Divide.new(Number.new(8),Number.new(4))
+    )
    )
 ).run
