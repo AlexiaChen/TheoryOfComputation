@@ -103,3 +103,34 @@ expression = expression.reduce
 
 # => false
 expression.reducible?
+
+#建立一个抽象机器来执行规约，直到得到一个值为止
+#抽象机器也可以简单认为是虚拟机
+
+class AbstractMachine < Struct.new(:expression)
+  def step_next
+    self.expression = expression.reduce
+  end
+
+  def run
+    while expression.reducible?
+      puts expression
+      step_next
+    end
+    puts expression  # final state
+  end
+end
+
+#实例化一个虚拟机执行表达式
+=begin
+  1*2 + 3*4
+  2 + 3*4
+  2 + 12
+  14
+=end
+AbstractMachine.new(
+   Add.new(                                          
+    Multiply.new(Number.new(1), Number.new(2)),   
+    Multiply.new(Number.new(3),Number.new(4))
+   )
+).run
