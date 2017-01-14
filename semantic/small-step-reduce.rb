@@ -1,6 +1,9 @@
 =begin
   小步规约实现 
   小步语义 small-step semantic
+
+  how to use:
+    simply run command irb with '--simple-prompt' agrument
 =end
 class Number < Struct.new(:value)
  def to_s
@@ -198,6 +201,54 @@ class Equal < Struct.new(:left, :right)
   end
 end
 
+class LessEqualThan < Struct.new(:left, :right)
+  def to_s
+    "#{left} <= #{right}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce
+    if left.reducible?
+      LessEqualThan.new(left.reduce,right)
+    elsif right.reducible?
+      LessEqualThan.new(left,right.reduce)
+    else
+      Boolean.new(left.value <= right.value)
+    end
+  end
+end
+
+class GreaterEqualThan < Struct.new(:left, :right)
+  def to_s
+    "#{left} >= #{right}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce
+    if left.reducible?
+      GreaterEqualThan.new(left.reduce,right)
+    elsif right.reducible?
+      GreaterEqualThan.new(left,right.reduce)
+    else
+      Boolean.new(left.value >= right.value)
+    end
+  end
+end
+
 # 构造表达式树
 # => 1*2 + 3*4
 Add.new(                                          
@@ -307,6 +358,58 @@ AbstractMachine.new(
 AbstractMachine.new(
    Equal.new(
      Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(4)))
+).run
+
+=begin
+  6 >= (2 + 4)
+  6 >= 6
+  true
+=end
+AbstractMachine.new(
+   GreaterEqualThan.new(
+     Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(4)))
+).run
+
+=begin
+  200 >= (2 + 4)
+  200 >= 6
+  true
+=end
+AbstractMachine.new(
+   GreaterEqualThan.new(
+     Number.new(200),
+     Add.new(
+       Number.new(2),
+       Number.new(4)))
+).run
+
+=begin
+  6 <= (2 + 4)
+  6 <= 6
+  true
+=end
+AbstractMachine.new(
+   LessEqualThan.new(
+     Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(4)))
+).run
+
+=begin
+  4 <= (2 + 4)
+  4 <= 6
+  true
+=end
+AbstractMachine.new(
+   LessEqualThan.new(
+     Number.new(4),
      Add.new(
        Number.new(2),
        Number.new(4)))
