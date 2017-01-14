@@ -112,6 +112,68 @@ class Divide < Struct.new(:left,:right)
   end
 end
 
+class Boolean < Struct.new(:value)
+  def to_s
+    value.to_s
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+
+  def reducible?
+    false
+  end
+end
+
+class LessThan < Struct.new(:left, :right)
+  def to_s
+    "#{left} < #{right}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce
+    if left.reducible?
+      LessThan.new(left.reduce,right)
+    elsif right.reducible?
+      LessThan.new(left,right.reduce)
+    else
+      Boolean.new(left.value < right.value)
+    end
+  end
+end
+
+class GreaterThan < Struct.new(:left, :right)
+  def to_s
+    "#{left} > #{right}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce
+    if left.reducible?
+      GreaterThan.new(left.reduce,right)
+    elsif right.reducible?
+      GreaterThan.new(left,right.reduce)
+    else
+      Boolean.new(left.value > right.value)
+    end
+  end
+end
+
 # 构造表达式树
 # => 1*2 + 3*4
 Add.new(                                          
@@ -186,3 +248,30 @@ AbstractMachine.new(
     )
    )
 ).run
+
+=begin
+  6 < (2 + 12)
+  6 < 14
+  true
+=end
+AbstractMachine.new(
+   LessThan.new(
+     Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(12)))
+).run
+
+=begin
+  6 > (2 + 12)
+  6 > 14
+  false
+=end
+AbstractMachine.new(
+   GreaterThan.new(
+     Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(12)))
+).run
+
