@@ -28,11 +28,11 @@ class Add < Struct.new(:left,:right)
    true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      Add.new(left.reduce,right)
+      Add.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      Add.new(left,right.reduce)
+      Add.new(left,right.reduce(var_enviroment))
     else
       Number.new(left.value + right.value)
     end
@@ -52,11 +52,11 @@ class Minus < Struct.new(:left,:right)
    true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      Minus.new(left.reduce,right)
+      Minus.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      Minus.new(left,right.reduce)
+      Minus.new(left,right.reduce(var_enviroment))
     else
       Number.new(left.value - right.value)
     end
@@ -76,11 +76,11 @@ class Multiply < Struct.new(:left,:right)
    true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      Multiply.new(left.reduce,right)
+      Multiply.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      Multiply.new(left,right.reduce)
+      Multiply.new(left,right.reduce(var_enviroment))
     else
       Number.new(left.value * right.value)
     end
@@ -100,11 +100,11 @@ class Divide < Struct.new(:left,:right)
    true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      Divide.new(left.reduce,right)
+      Divide.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      Divide.new(left,right.reduce)
+      Divide.new(left,right.reduce(var_enviroment))
     else
       Number.new(left.value / right.value)
     end
@@ -142,11 +142,11 @@ class LessThan < Struct.new(:left, :right)
     true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      LessThan.new(left.reduce,right)
+      LessThan.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      LessThan.new(left,right.reduce)
+      LessThan.new(left,right.reduce(var_enviroment))
     else
       Boolean.new(left.value < right.value)
     end
@@ -166,11 +166,11 @@ class GreaterThan < Struct.new(:left, :right)
     true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      GreaterThan.new(left.reduce,right)
+      GreaterThan.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      GreaterThan.new(left,right.reduce)
+      GreaterThan.new(left,right.reduce(var_enviroment))
     else
       Boolean.new(left.value > right.value)
     end
@@ -190,11 +190,11 @@ class Equal < Struct.new(:left, :right)
     true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      Equal.new(left.reduce,right)
+      Equal.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      Equal.new(left,right.reduce)
+      Equal.new(left,right.reduce(var_enviroment))
     else
       Boolean.new(left.value == right.value)
     end
@@ -214,11 +214,11 @@ class LessEqualThan < Struct.new(:left, :right)
     true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      LessEqualThan.new(left.reduce,right)
+      LessEqualThan.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      LessEqualThan.new(left,right.reduce)
+      LessEqualThan.new(left,right.reduce(var_enviroment))
     else
       Boolean.new(left.value <= right.value)
     end
@@ -238,11 +238,11 @@ class GreaterEqualThan < Struct.new(:left, :right)
     true
   end
 
-  def reduce
+  def reduce(var_enviroment)
     if left.reducible?
-      GreaterEqualThan.new(left.reduce,right)
+      GreaterEqualThan.new(left.reduce(var_enviroment),right)
     elsif right.reducible?
-      GreaterEqualThan.new(left,right.reduce)
+      GreaterEqualThan.new(left,right.reduce(var_enviroment))
     else
       Boolean.new(left.value >= right.value)
     end
@@ -292,9 +292,9 @@ expression.reducible?
 #建立一个抽象机器来执行规约，直到得到一个值为止
 #抽象机器也可以简单认为是虚拟机
 
-class AbstractMachine < Struct.new(:expression)
+class AbstractMachine < Struct.new(:expression,:var_enviroment)
   def step_next
-    self.expression = expression.reduce
+    self.expression = expression.reduce(var_enviroment)
   end
 
   def run
@@ -319,9 +319,9 @@ AbstractMachine.new(
     Multiply.new(Number.new(3), Number.new(2)),   
     Minus.new(
         Number.new(10),
-        Divide.new(Number.new(8),Number.new(4))
-    )
-   )
+        Divide.new(Number.new(8),Number.new(4)))
+   ),
+   {}
 ).run
 
 =begin
@@ -334,7 +334,8 @@ AbstractMachine.new(
      Number.new(6),
      Add.new(
        Number.new(2),
-       Number.new(12)))
+       Number.new(12))),
+   {}
 ).run
 
 =begin
@@ -347,7 +348,8 @@ AbstractMachine.new(
      Number.new(6),
      Add.new(
        Number.new(2),
-       Number.new(12)))
+       Number.new(12))),
+   {} 
 ).run
 
 =begin
@@ -360,7 +362,8 @@ AbstractMachine.new(
      Number.new(6),
      Add.new(
        Number.new(2),
-       Number.new(4)))
+       Number.new(4))),
+   {}
 ).run
 
 =begin
@@ -373,7 +376,8 @@ AbstractMachine.new(
      Number.new(6),
      Add.new(
        Number.new(2),
-       Number.new(4)))
+       Number.new(4))),
+   {}
 ).run
 
 =begin
@@ -386,7 +390,8 @@ AbstractMachine.new(
      Number.new(200),
      Add.new(
        Number.new(2),
-       Number.new(4)))
+       Number.new(4))),
+   {}
 ).run
 
 =begin
@@ -399,7 +404,8 @@ AbstractMachine.new(
      Number.new(6),
      Add.new(
        Number.new(2),
-       Number.new(4)))
+       Number.new(4))),
+   {}
 ).run
 
 =begin
@@ -412,6 +418,52 @@ AbstractMachine.new(
      Number.new(4),
      Add.new(
        Number.new(2),
-       Number.new(4)))
+       Number.new(4))),
+   {}
 ).run
 
+# 有定义变量的功能
+class Variable < Struct.new(:name)
+  def to_s
+    name.to_s
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+
+  #变量可以规约，需要规约到一个值上，就是变量名（相当于一个符号）映射到变量的值
+  def reducible?
+    true            
+  end
+
+  #变量名到变量值的一个映射，var_enviroment可以简单设计为Hash Table
+  def reduce(var_enviroment)
+    var_enviroment[name]     
+  end
+end
+
+=begin
+  x <= y + z
+  4 <= y + z
+  4 <= 2 + z
+  4 <= 2 + 8
+  4 <= 10
+  true
+
+  相当于:
+  x = 4;
+  y = 2;
+  z = 8;
+
+  puts x <= y + z;
+  => true
+=end
+AbstractMachine.new(
+   LessEqualThan.new(
+     Variable.new(:x),
+     Add.new(
+       Variable.new(:y),
+       Variable.new(:z))),
+   {x: Number.new(4), y: Number.new(2), z: Number.new(8)}  
+).run
