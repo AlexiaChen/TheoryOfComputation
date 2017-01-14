@@ -174,6 +174,30 @@ class GreaterThan < Struct.new(:left, :right)
   end
 end
 
+class Equal < Struct.new(:left, :right)
+  def to_s
+    "#{left} == #{right}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce
+    if left.reducible?
+      Equal.new(left.reduce,right)
+    elsif right.reducible?
+      Equal.new(left,right.reduce)
+    else
+      Boolean.new(left.value == right.value)
+    end
+  end
+end
+
 # 构造表达式树
 # => 1*2 + 3*4
 Add.new(                                          
@@ -273,5 +297,18 @@ AbstractMachine.new(
      Add.new(
        Number.new(2),
        Number.new(12)))
+).run
+
+=begin
+  6 == (2 + 4)
+  6 == 6
+  true
+=end
+AbstractMachine.new(
+   Equal.new(
+     Number.new(6),
+     Add.new(
+       Number.new(2),
+       Number.new(4)))
 ).run
 
