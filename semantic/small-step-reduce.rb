@@ -540,6 +540,7 @@ statement, var_enviroment = statement.reduce(var_enviroment)
 statement.reducible?
 
 =begin
+  抽象机器支持赋值语句
   => x = x + 1, {:x=>5}
   => x = 5 + 1, {:x=>5}
   => x = 6, {:x=>5}
@@ -549,4 +550,60 @@ AbstractMachine.new(
   Assign.new(:x, Add.new(Variable.new(:x),
                         Number.new(1))),
   {x: Number.new(5)}
+).runs
+
+#支持If语句
+class If < Struct.new(:condition, :true_statement, :false_statement)
+  def to_s
+    "if (#{condition}) { #{true_statement} } else { #{false_statement} }"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce(var_enviroment)
+    if condition.reducible?
+      [If.new(condition.reduce(var_enviroment), true_statement,false_statement),var_enviroment]
+    else
+      case condition
+      when Boolean.new(true)
+        [true_statement,var_enviroment]
+      when Boolean.new(false)
+        [false_statement,var_enviroment]
+      end
+    end
+  end
+end
+
+=begin
+  if(condition) {t = 7} else {t = 5}, {:condition => true}
+  if(true) {t = 7} else {t = 5}, {:condition => true}
+  t = 7, {:condition => true}
+  do-nothing, {:condition => true, :t => 7}
+=end
+AbstractMachine.new(
+  If.new(Variable.new(:condition),
+        Assign.new(:t, Number.new(7)),
+        Assign.new(:t, Number.new(5))),
+  {condition: Boolean.new(true)}
+).run
+
+=begin
+  if(x < y) {t = 7} else {x = 5}, {:condition => true, :x => 10, :y=>8}
+  if(10 < y) {t = 7} else {x = 5}, {:condition => true, :x => 10, :y=>8}
+  if(10 < 8) {t = 7} else {x = 5}, {:condition => true, :x => 10, :y=>8}
+  if(false) {t = 7} else {x = 5}, {:condition => true, :x => 10, :y=>8}
+  x = 5, {:condition => true, :x => 10, :y=>8}
+  do-nothing, {:condition => true, :x => 5, :y=>8}
+=end
+AbstractMachine.new(
+  If.new(LessThan.new(Variable.new(:x), Variable.new(:y)),
+        Assign.new(:t, Number.new(7)),
+        Assign.new(:x, Number.new(5))),
+  {condition: Boolean.new(true), x: Number.new(10), y: Number.new(8)}
 ).run
