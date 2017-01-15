@@ -607,3 +607,69 @@ AbstractMachine.new(
         Assign.new(:x, Number.new(5))),
   {condition: Boolean.new(true), x: Number.new(10), y: Number.new(8)}
 ).run
+
+#支持代码块
+class CodeBlock < Struct.new(:first_statement, :second_statement)
+  def to_s
+    "{#{first_statement}; #{second_statement}}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce(var_enviroment)
+    case first_statement
+    when DoNothing.new
+      [second_statement,var_enviroment]
+    else
+      reduced_first, reduced_enviroment = first_statement.reduce(var_enviroment)
+      [CodeBlock.new(reduced_first,second_statement),reduced_enviroment]
+    end
+  end
+end
+
+=begin
+  x = (2 + 5); y = (x + 3),{}
+  x = 7; y = (x + 3),{}
+  do-nothing; y = (x + 3),{:x => 7}
+  y = (x + 3),{:x => 7}
+  y = (7 + 3),{:x => 7}
+  y = 10,{:x => 7}
+  do-nothing,{:x =>7, :y=> 10}
+=end
+AbstractMachine.new(
+  CodeBlock.new(
+    Assign.new(:x, Add.new(Number.new(2), Number.new(5))),
+    Assign.new(:y, Add.new(Variable.new(:x), Number.new(3)))
+  ),
+  {}
+).run
+
+=begin
+  if (x < y) { {z = (2 + 5); z = (z + 10)} } else { w = 99 },{:x=>2, :y=>5}
+  if (2 < y) { {z = (2 + 5); z = (z + 10)} } else { w = 99 },{:x=>2, :y=>5}
+  if (2 < 5) { {z = (2 + 5); z = (z + 10)} } else { w = 99 },{:x=>2, :y=>5}
+  if (true) { {z = (2 + 5); z = (z + 10)} } else { w = 99 },{:x=>2, :y=>5}
+  {z = (2 + 5); z = (z + 10)},{:x=>2, :y=>5}
+  {z = 7; z = (z + 10)},{:x=>2, :y=>5}
+  {do-nothing; z = (z + 10)},{:x=>2, :y=>5, :z=>7}
+  z = (z + 10),{:x=>2, :y=>5, :z=>7}
+  z = (7 + 10),{:x=>2, :y=>5, :z=>7}
+  z = 17,{:x=>2, :y=>5, :z=>7}
+  do-nothing,{:x=>2, :y=>5, :z=>17}
+=end
+AbstractMachine.new(
+  If.new(LessThan.new(Variable.new(:x), Variable.new(:y)),
+         CodeBlock.new(
+                       Assign.new(:z,Add.new(Number.new(2),Number.new(5))),
+                       Assign.new(:z,Add.new(Variable.new(:z),Number.new(10)))
+                       ),
+        Assign.new(:w,Number.new(99))
+        ),
+  {x: Number.new(2), y: Number.new(5)}
+).run
