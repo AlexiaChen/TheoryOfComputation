@@ -292,17 +292,17 @@ expression.reducible?
 #建立一个抽象机器来执行规约，直到得到一个值为止
 #抽象机器也可以简单认为是虚拟机
 
-class AbstractMachine < Struct.new(:expression,:var_enviroment)
+class AbstractMachine < Struct.new(:statement,:var_enviroment)
   def step_next
-    self.expression = expression.reduce(var_enviroment)
+    self.statement, self.var_enviroment = statement.reduce(var_enviroment)
   end
 
   def run
-    while expression.reducible?
-      puts expression
+    while statement.reducible?
+      puts "#{statement},#{var_enviroment}"
       step_next
     end
-    puts expression  # final state
+    puts "#{statement},#{var_enviroment}"  # final state
   end
 end
 
@@ -423,6 +423,8 @@ AbstractMachine.new(
 ).run
 
 # 有定义变量的功能
+#变量可以规约，需要规约到一个值上，就是变量名（相当于一个符号）映射到变量的值
+#变量名到变量值的一个映射，var_enviroment可以简单设计为Hash Table
 class Variable < Struct.new(:name)
   def to_s
     name.to_s
@@ -432,12 +434,10 @@ class Variable < Struct.new(:name)
     "<<#{self}>>"
   end
 
-  #变量可以规约，需要规约到一个值上，就是变量名（相当于一个符号）映射到变量的值
   def reducible?
     true            
   end
 
-  #变量名到变量值的一个映射，var_enviroment可以简单设计为Hash Table
   def reduce(var_enviroment)
     var_enviroment[name]     
   end
@@ -466,4 +466,87 @@ AbstractMachine.new(
        Variable.new(:y),
        Variable.new(:z))),
    {x: Number.new(4), y: Number.new(2), z: Number.new(8)}  
+).run
+
+#为语言的语句(statement)定一个不能规约的状态，不可规约语句, 没任何属性
+#注意: 语句(statement)和表达式(expression)不是一个概念 
+class DoNothing
+  def to_s
+    "do-nothing"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def ==(other_statement)
+    other_statement.instance_of?(DoNothing)
+  end
+
+  def reducible?
+    false
+  end
+end
+
+class Assign < Struct.new(:name,:expression)
+  def to_s
+    "#{name} = #{expression}"
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce(var_enviroment)
+    if expression.reducible?
+      [Assign.new(name,expression.reduce(var_enviroment)), var_enviroment]
+    else
+      [DoNothing.new, var_enviroment.merge({name => expression})]
+    end
+  end
+end
+
+#对一个赋值表达式进行反复规约，直到不能规约为止，表达式的值就会更新到环境上
+# => x = x + 1
+statement = Assign.new(:x, Add.new(
+                            Variable.new(:x),
+                            Number.new(1)))
+# => {:x => 5}
+var_enviroment = {x: Number.new(5)}
+
+# => true
+statement.reducible?
+
+# => [x = 5 + 1, {:x=>5}]
+statement, var_enviroment = statement.reduce(var_enviroment)
+
+# => true
+statement.reducible?
+
+# => [x = 6, {:x=>5}]
+statement, var_enviroment = statement.reduce(var_enviroment)
+
+# => true
+statement.reducible?
+
+# => [do-nothing, {:x=>6}]
+statement, var_enviroment = statement.reduce(var_enviroment)
+
+# => false
+statement.reducible?
+
+=begin
+  => x = x + 1, {:x=>5}
+  => x = 5 + 1, {:x=>5}
+  => x = 6, {:x=>5}
+  => do-nothing, {:x=>6}
+=end
+AbstractMachine.new(
+  Assign.new(:x, Add.new(Variable.new(:x),
+                        Number.new(1))),
+  {x: Number.new(5)}
 ).run
