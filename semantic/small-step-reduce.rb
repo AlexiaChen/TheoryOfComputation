@@ -673,3 +673,85 @@ AbstractMachine.new(
         ),
   {x: Number.new(2), y: Number.new(5)}
 ).run
+
+#支持While循环语句
+class While < Struct.new(:condition, :body)
+  def to_s
+    "while (#{condition}) { #{body} }"
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+
+  def reducible?
+    true
+  end
+
+  def reduce(var_enviroment)
+    [If.new(condition,CodeBlock.new(body,self),DoNothing.new),var_enviroment]
+  end
+end
+
+=begin
+  i = 1;
+  result = 0;
+  while(i <= 3)
+  {
+    result = result + 1;
+    i++;
+  }
+  puts result; // result is 3
+
+  while (i <= 3) { {x = (x + 1); i = (i + 1)} },{:i=><<1>>, :x=><<0>>}
+if (i <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<1>>, :x=><<0>>}
+if (1 <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<1>>, :x=><<0>>}
+if (true) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<1>>, :x=><<0>>}
+{{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<0>>}
+{{x = (0 + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<0>>}
+{{x = 1; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<0>>}
+{{do-nothing; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<1>>}
+{i = (i + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<1>>}
+{i = (1 + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<1>>}
+{i = 2; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<1>>, :x=><<1>>}
+{do-nothing; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<1>>}
+while (i <= 3) { {x = (x + 1); i = (i + 1)} },{:i=><<2>>, :x=><<1>>}
+if (i <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<2>>, :x=><<1>>}
+if (2 <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<2>>, :x=><<1>>}
+if (true) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<2>>, :x=><<1>>}
+{{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<1>>}
+{{x = (1 + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<1>>}
+{{x = 2; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<1>>}
+{{do-nothing; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<2>>}
+{i = (i + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<2>>}
+{i = (2 + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<2>>}
+{i = 3; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<2>>, :x=><<2>>}
+{do-nothing; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<2>>}
+while (i <= 3) { {x = (x + 1); i = (i + 1)} },{:i=><<3>>, :x=><<2>>}
+if (i <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<3>>, :x=><<2>>}
+if (3 <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<3>>, :x=><<2>>}
+if (true) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<3>>, :x=><<2>>}
+{{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<2>>}
+{{x = (2 + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<2>>}
+{{x = 3; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<2>>}
+{{do-nothing; i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<3>>}
+{i = (i + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<3>>}
+{i = (3 + 1); while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<3>>}
+{i = 4; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<3>>, :x=><<3>>}
+{do-nothing; while (i <= 3) { {x = (x + 1); i = (i + 1)} }},{:i=><<4>>, :x=><<3>>}
+while (i <= 3) { {x = (x + 1); i = (i + 1)} },{:i=><<4>>, :x=><<3>>}
+if (i <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<4>>, :x=><<3>>}
+if (4 <= 3) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<4>>, :x=><<3>>}
+if (false) { {{x = (x + 1); i = (i + 1)}; while (i <= 3) { {x = (x + 1); i = (i + 1)} }} } else { do-nothing },{:i=><<4>>, :x=><<3>>}
+do-nothing,{:i=><<4>>, :x=><<3>>}
+ 
+=end
+AbstractMachine.new(
+  While.new(
+    LessEqualThan.new(Variable.new(:i),Number.new(3)),
+    CodeBlock.new(
+     Assign.new(:x,Add.new(Variable.new(:x),Number.new(1))),
+     Assign.new(:i,Add.new(Variable.new(:i),Number.new(1))))
+    ),
+  {i: Number.new(1), x: Number.new(0)}
+).run
