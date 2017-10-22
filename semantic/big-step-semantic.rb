@@ -188,6 +188,57 @@ class Assign < Struct.new(:name,:expression)
   end
 end
 
+class If < Struct.new(:condition, :true_statement, :false_statement)
+  def to_s
+    "if (#{condition}) { #{true_statement} } else { #{false_statement} }"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def evaluate(var_eniroment)
+    case condition.evaluate(var_eniroment)
+    when Boolean.new(true)
+      true_statement.evaluate(var_eniroment)
+    when Boolean.new(false)
+      false_statement.evaluate(var_eniroment)
+    end
+  end
+end
+
+class DoNothing
+  def to_s
+    "do-nothing"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def ==(other_statement)
+    other_statement.instance_of?(DoNothing)
+  end
+
+  def evaluate(var_eniroment)
+    var_eniroment
+  end
+end
+
+class CodeBlock < Struct.new(:first_statement, :second_statement)
+  def to_s
+    "{#{first_statement}; #{second_statement}}"
+  end
+
+  def inspect
+    "#{self}"
+  end
+
+  def evaluate(var_eniroment)
+    second_statement.evaluate(first_statement.evaluate(var_eniroment))
+  end
+end
+
 # => 23
 Number.new(23).evaluate({})
 
@@ -214,3 +265,23 @@ GreaterEqualThan.new(
 Assign.new(:age,
 Add.new(Number.new(21), Variable.new(:step))
 ).evaluate({ step: Number.new(23)})
+
+# y => 5
+If.new(
+  GreaterThan.new(Number.new(5), Number.new(6)),
+  Assign.new(:x,Add.new(Number.new(4), Number.new(7))),
+  Assign.new(:y,Minus.new(Number.new(7), Number.new(2)))
+).evaluate({})
+
+=begin
+=> {x = (6 + 2); y = (x / 4)}
+=end
+result = CodeBlock.new(
+  Assign.new(:x, Add.new(Number.new(6), Number.new(2))),
+  Assign.new(:y, Divide.new(Variable.new(:x), Number.new(4)))
+)
+
+=begin
+=> {:x => 8, :y => 2}
+=end
+result.evaluate({})
