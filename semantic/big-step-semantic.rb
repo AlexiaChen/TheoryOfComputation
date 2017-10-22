@@ -239,6 +239,25 @@ class CodeBlock < Struct.new(:first_statement, :second_statement)
   end
 end
 
+class While < Struct.new(:condition, :body)
+  def to_s
+    "while (#{condition}) { #{body} }"
+  end
+
+  def inspect
+    "<<#{self}>>"
+  end
+
+  def evaluate(var_eniroment)
+    case condition.evaluate(var_eniroment)
+    when Boolean.new(true)
+      evaluate(body.evaluate(var_eniroment))
+    when Boolean.new(false)
+      var_eniroment
+    end
+  end
+end
+
 # => 23
 Number.new(23).evaluate({})
 
@@ -285,3 +304,17 @@ result = CodeBlock.new(
 => {:x => 8, :y => 2}
 =end
 result.evaluate({})
+
+=begin
+x = 0
+while (x < 3) 
+{ 
+  x = x + 1
+}
+
+x => 3
+=end
+While.new(
+  LessThan.new(Variable.new(:x), Number.new(3)),
+  Assign.new(:x, Add.new(Variable.new(:x), Number.new(1)))
+).evaluate({ x: Number.new(0) })
