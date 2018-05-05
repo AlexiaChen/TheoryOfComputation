@@ -27,7 +27,7 @@ class Boolean < Struct.new(:value)
     end
 end
 
-# => "-> e { 5 }"
+# => "-> e { 2 }"
 Number.new(2).to_ruby
 # => "-> e { true }"
 Boolean.new(true).to_ruby
