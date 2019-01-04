@@ -33,6 +33,16 @@ class NFARuleSet < Struct.new(:rules)
   def rules_for(state, character)
     rules.select { |rule| rule.applies_to?(state, character) } # select * where 
   end
+
+  def follow_free_moves(states)
+    more_states = next_states(states, nil)
+
+    if more_states.subset?(states)
+      states
+    else
+      follow_free_moves(states + more_states)
+    end
+  end
 end
 
 =begin
@@ -66,6 +76,10 @@ class NFA < Struct.new(:current_states, :final_states, :ruleset)
       read_char(character)
     end
   end
+
+  def current_states
+    ruleset.follow_free_moves(super)
+  end
 end
 
 class NFAMaker < Struct.new(:start_state, :final_states, :ruleset)
@@ -87,3 +101,34 @@ nfa.accepts?('bababab')
 nfa.accepts?('babababa')
 # => true
 nfa.accepts?('bababababbbbbb')
+
+
+=begin
+#<struct NFARuleSet rules=[#<FARule 1 ----> 2>, #<FARule 1 ----> 4>, 
+#<FARule 2 --a--> 3>, #<FARule 3 --a--> 2>, #<FARule 4 --a--> 5>, 
+#<FARule 5 --a--> 6>, #<FARule 6 --a--> 7>]>
+=end
+ruleset = NFARuleSet.new([
+  FARule.new(1, nil, 2), FARule.new(1, nil, 4), 
+  FARule.new(2, 'a', 3),
+  FARule.new(3, 'a', 2), 
+  FARule.new(4, 'a', 5), 
+  FARule.new(5, 'a', 6),
+  FARule.new(6, 'a', 4)
+])
+
+# => #<Set: {2, 4}>
+ruleset.next_states(Set[1], nil)
+
+# =>  #<Set: {1, 2, 4}>
+ruleset.follow_free_moves(Set[1])
+
+nfa = NFAMaker.new(1, [2, 4], ruleset)
+# => true
+nfa.accepts?('aa')
+# => true
+nfa.accepts?('aaa')
+# => false
+nfa.accepts?('aaaaa')
+# => true
+nfa.accepts?('aaaaaa')
